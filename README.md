@@ -2,7 +2,7 @@
 
 This project automatically creates an EC2 instance and an S3 bucket using Terraform. When the EC2 instance is stopped or shut down, it uploads log files to the S3 bucket.
 
-##  Tools Used
+##  Tools Used in this project
 
 - Terraform
 - AWS EC2
