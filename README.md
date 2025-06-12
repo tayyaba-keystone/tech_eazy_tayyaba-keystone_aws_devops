@@ -1,4 +1,4 @@
-![image](https://github.com/user-attachments/assets/12c8a943-5e46-4b9c-b130-0cf1c7f438ad)# Assignment 2 – Upload EC2 Logs to S3 using Terraform
+# Assignment 2 – Upload EC2 Logs to S3 using Terraform
 
 This project automatically creates an EC2 instance and an S3 bucket using Terraform. When the EC2 instance is stopped or shut down, it uploads log files to the S3 bucket.
 
