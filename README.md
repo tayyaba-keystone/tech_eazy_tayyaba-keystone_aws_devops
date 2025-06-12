@@ -34,7 +34,7 @@ Private S3 bucket
 
 ![Image](https://github.com/user-attachments/assets/158b914d-32cc-4c72-ab50-f1155371ba3f)
 
-![Image](https://github.com/user-attachments/assets/b5f0a345-058f-422e-a6f0-a925b9fa67be)
+![Image](https://github.com/user-attachments/assets/4f87a23d-cfca-4c5d-b69b-dede6354a0c6)
 
 Upload EC2 logs after shutdown
 ![Image](https://github.com/user-attachments/assets/4f3119a9-45dd-4259-bb4b-300e6fd8ecf5)
