@@ -3,7 +3,7 @@ apt update -y
 apt install -y awscli
 
 LOGFILE="/var/log/cloud-init.log"
-APPLOG="/var/www/html/app.log"  # Adjust this if app log path differs
+APPLOG="/home/ubuntu/app/output.log" # Adjust this if app log path differs
 
 cat <<EOF > /etc/systemd/system/upload-logs.service
 [Unit]
@@ -13,8 +13,8 @@ Before=shutdown.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/aws s3 cp $LOGFILE s3://${bucket_name}/ec2-logs/
-ExecStart=/usr/bin/aws s3 cp $APPLOG s3://${bucket_name}/app/logs/
+ExecStart=/usr/bin/aws s3 cp /var/log/cloud-init.log s3://${bucket_name}/ec2-logs/
+ExecStart=/usr/bin/aws s3 cp /home/ubuntu/app/output.log s3://${bucket_name}/app/logs/
 RemainAfterExit=yes
 
 [Install]
