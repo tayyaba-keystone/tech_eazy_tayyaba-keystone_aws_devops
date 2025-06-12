@@ -3,7 +3,10 @@ apt update -y
 apt install -y awscli
 
 LOGFILE="/var/log/cloud-init.log"
+
 APPLOG="/home/ubuntu/app/output.log" 
+APPLOG="/home/ubuntu/app/output.log" # Adjust this if app log path  will differs
+
 
 cat <<EOF > /etc/systemd/system/upload-logs.service
 [Unit]
