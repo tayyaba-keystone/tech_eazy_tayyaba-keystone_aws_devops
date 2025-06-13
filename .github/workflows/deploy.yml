@@ -1,0 +1,75 @@
+name: Deploy Infrastructure and App
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - 'deploy-*'
+
+jobs:
+  deploy:
+    name: Deploy to AWS EC2
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: us-east-1
+      TF_VAR_stage: ${{ github.ref_name }}  # Will be deploy-dev, deploy-prod, etc.
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.6.6
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Terraform Init
+      run: terraform init
+
+    - name: Terraform Plan
+      run: terraform plan -var="stage=${{ env.TF_VAR_stage }}"
+
+    - name: Terraform Apply
+      run: terraform apply -auto-approve -var="stage=${{ env.TF_VAR_stage }}"
+
+    - name: Get EC2 Public IP
+      id: ec2ip
+      run: |
+        ip=$(terraform output -raw ec2_public_ip)
+        echo "EC2_IP=$ip" >> $GITHUB_ENV
+
+    - name: Wait for EC2 to be ready
+      run: sleep 60
+
+    - name: Deploy App via SSH
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ env.EC2_IP }}
+        username: ubuntu
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          sudo apt update -y
+          sudo apt install -y nginx
+          echo "<h1>Deployed by GitHub Actions</h1>" | sudo tee /var/www/html/index.html
+          sudo systemctl restart nginx
+
+    - name: Upload Deployment Log to S3
+      run: |
+        echo "Deployment completed at $(date)" > deploy.log
+        aws s3 cp deploy.log s3://your-s3-bucket-name/logs/${{ env.TF_VAR_stage }}-deploy.log
+
+    - name: Health Check - Port 80
+      run: |
+        if curl -s --head http://${{ env.EC2_IP }} | grep "200 OK" > /dev/null; then
+          echo "App is healthy on port 80"
+        else
+          echo "App failed to start" && exit 1
+        fi
