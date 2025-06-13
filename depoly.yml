@@ -4,9 +4,14 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
+    tags:
+      - 'deploy-*'
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: 'Deployment stage (e.g., dev, prod)'
+        required: true
+        default: dev
 
 jobs:
   terraform:
@@ -32,10 +37,24 @@ jobs:
         run: terraform validate
 
       - name: Terraform Plan
-        run: terraform plan -var-file="dev.tfvars"
+        run: terraform plan -var="stage=${{ github.event.inputs.stage || 'dev' }}"
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve -var-file="dev.tfvars"
+        run: terraform apply -auto-approve -var="stage=${{ github.event.inputs.stage || 'dev' }}"
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+       - name: SSH to EC2 and run setup script (if needed)
+         uses: appleboy/ssh-action@v1.0.0
+         with:
+           host: ${{ steps.ec2.outputs.public_ip }}
+           username: ubuntu
+           key: ${{ secrets.EC2_PRIVATE_KEY }}
+           script: |
+            chmod +x setup.sh
+             ./setup.sh
+
+       - name: Health Check (App on Port 80)
+         run: |
+           curl -sSf http://${{ steps.ec2.outputs.public_ip }}:80 || exit 1
