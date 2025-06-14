@@ -13,7 +13,11 @@ resource "aws_instance" "app_server" {
   iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
   user_data              = data.template_file.user_data.rendered
   key_name = "iac"
+   tags = {
+    Name = "AppServer"  # ✅ This is correct
+  }
 }
+
 data "aws_vpc" "default" {
   default = true
 }
