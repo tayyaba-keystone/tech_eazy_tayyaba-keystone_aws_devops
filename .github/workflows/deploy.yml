@@ -1,75 +1,77 @@
-name: Deploy Infrastructure and App
+name: Terraform Deployment
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
     tags:
       - 'deploy-*'
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: 'Deployment stage (e.g., dev, prod)'
+        required: true
+        default: dev
 
 jobs:
-  deploy:
-    name: Deploy to AWS EC2
+  terraform:
+    name: Terraform Apply
     runs-on: ubuntu-latest
 
     env:
       AWS_REGION: us-east-1
-      TF_VAR_stage: ${{ github.ref_name }}  # Will be deploy-dev, deploy-prod, etc.
+      TF_VAR_stage: ${{ github.event.inputs.stage || github.ref_name }}
+      TF_VAR_bucket_name: ${{ secrets.TF_VAR_bucket_name }}
 
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v3
-      with:
-        terraform_version: 1.6.6
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.7
 
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v2
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_REGION }}
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
-    - name: Terraform Init
-      run: terraform init
+      - name: Terraform Init
+        run: terraform init
 
-    - name: Terraform Plan
-      run: terraform plan -var="stage=${{ env.TF_VAR_stage }}"
+      - name: Terraform Format Check
+        run: terraform fmt -check
 
-    - name: Terraform Apply
-      run: terraform apply -auto-approve -var="stage=${{ env.TF_VAR_stage }}"
+      - name: Terraform Validate
+        run: terraform validate
 
-    - name: Get EC2 Public IP
-      id: ec2ip
-      run: |
-        ip=$(terraform output -raw ec2_public_ip)
-        echo "EC2_IP=$ip" >> $GITHUB_ENV
+      - name: Terraform Plan
+        run: terraform plan -var="stage=${{ env.TF_VAR_stage }}" -var="bucket_name=${{ env.TF_VAR_bucket_name }}"
 
-    - name: Wait for EC2 to be ready
-      run: sleep 60
+      - name: Terraform Apply
+        run: terraform apply -auto-approve -var="stage=${{ env.TF_VAR_stage }}" -var="bucket_name=${{ env.TF_VAR_bucket_name }}"
 
-    - name: Deploy App via SSH
-      uses: appleboy/ssh-action@v1.0.0
-      with:
-        host: ${{ env.EC2_IP }}
-        username: ubuntu
-        key: ${{ secrets.EC2_SSH_KEY }}
-        script: |
-          sudo apt update -y
-          sudo apt install -y nginx
-          echo "<h1>Deployed by GitHub Actions</h1>" | sudo tee /var/www/html/index.html
-          sudo systemctl restart nginx
+      - name: Get EC2 IP (from output)
+        id: ec2
+        run: |
+          echo "public_ip=$(terraform output -raw ec2_public_ip)" >> $GITHUB_OUTPUT
 
-    - name: Upload Deployment Log to S3
-      run: |
-        echo "Deployment completed at $(date)" > deploy.log
-        aws s3 cp deploy.log s3://your-s3-bucket-name/logs/${{ env.TF_VAR_stage }}-deploy.log
+      - name: Wait for EC2 to be ready
+        run: sleep 60
 
-    - name: Health Check - Port 80
-      run: |
-        if curl -s --head http://${{ env.EC2_IP }} | grep "200 OK" > /dev/null; then
-          echo "App is healthy on port 80"
-        else
-          echo "App failed to start" && exit 1
-        fi
+      - name: SSH to EC2 and run setup script
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ steps.ec2.outputs.public_ip }}
+          username: ubuntu
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          script: |
+            chmod +x setup.sh
+            ./setup.sh
+
+      - name: Health Check (App on Port 80)
+        run: |
+          curl -sSf http://${{ steps.ec2.outputs.public_ip }}:80 || exit 1
