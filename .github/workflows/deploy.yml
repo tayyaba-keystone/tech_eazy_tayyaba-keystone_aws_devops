@@ -40,7 +40,7 @@ jobs:
         id: getip
         run: |
           IP=$(aws ec2 describe-instances \
-            --filters "Name=tag:Name,Values=my-ec2" \             # 🔧 Replace 'my-ec2' with your actual EC2 Name tag if different
+            --filters "Name=tag:Name,Values=AppServer" \             # 🔧 Replace 'my-ec2' with your actual EC2 Name tag if different
             --query "Reservations[*].Instances[*].PublicIpAddress" \
             --output text)
           echo "EC2_IP=$IP" >> $GITHUB_ENV
