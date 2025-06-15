@@ -1,75 +1,85 @@
-name: Deploy Infrastructure and App
+name: Deploy Java App via Terraform
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main                       # ✅ Triggers workflow when you push to main branch
     tags:
-      - 'deploy-*'
+      - deploy-dev                 # ✅ You can also trigger by pushing tag 'deploy-dev'
+      - deploy-prod                # ✅ Or tag 'deploy-prod'
 
 jobs:
   deploy:
-    name: Deploy to AWS EC2
+    name: Provision and Deploy
     runs-on: ubuntu-latest
 
     env:
-      AWS_REGION: us-east-1
-      TF_VAR_stage: ${{ github.ref_name }}  # Will be deploy-dev, deploy-prod, etc.
+      BUCKET_NAME: ${{ secrets.TF_VAR_BUCKET_NAME }}             # ✅ Your S3 bucket name from GitHub Secrets
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}       # ✅ AWS access key
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }} # ✅ AWS secret key
 
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v3
-      with:
-        terraform_version: 1.6.6
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0                               # ✅ You can modify Terraform version if needed
 
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v2
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_REGION }}
+      - name: Terraform Init
+        run: terraform init
 
-    - name: Terraform Init
-      run: terraform init
+      - name: Terraform Plan
+        run: terraform plan -var="bucket_name=${{ env.BUCKET_NAME }}"
 
-    - name: Terraform Plan
-      run: terraform plan -var="stage=${{ env.TF_VAR_stage }}"
+      - name: Terraform Apply
+        run: terraform apply -auto-approve -var="bucket_name=${{ env.BUCKET_NAME }}"
 
-    - name: Terraform Apply
-      run: terraform apply -auto-approve -var="stage=${{ env.TF_VAR_stage }}"
+      - name: Get EC2 Public IP
+        id: getip
+        run: |
+          IP=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=my-ec2" \             # 🔧 Replace 'my-ec2' with your actual EC2 Name tag if different
+            --query "Reservations[*].Instances[*].PublicIpAddress" \
+            --output text)
+          echo "EC2_IP=$IP" >> $GITHUB_ENV
+          echo "::set-output name=ec2ip::$IP"
 
-    - name: Get EC2 Public IP
-      id: ec2ip
-      run: |
-        ip=$(terraform output -raw ec2_public_ip)
-        echo "EC2_IP=$ip" >> $GITHUB_ENV
+      - name: Save EC2 private key
+        run: |
+          echo "${{ secrets.EC2_PRIVATE_KEY }}" > ec2_key.pem    # ✅ Save your private key securely
+          chmod 600 ec2_key.pem
 
-    - name: Wait for EC2 to be ready
-      run: sleep 60
+      - name: SSH and Deploy Java App
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ec2_key.pem ubuntu@$EC2_IP << EOF
+            sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys B1998361219BD9C9
+            sudo apt-add-repository 'deb https://repos.azul.com/zulu/deb stable main' -y
+            sudo apt update -y
+            sudo apt install -y zulu21-jdk
+       
+            git clone https://github.com/techeazy-consulting/techeazy-devops.git   # 🔧 Replace with your actual Java app GitHub repo
+                                              
+            ./mvnw clean package -DskipTests                      # ✅ Compile your Java project — use mvn or ./mvnw based on your setup
+            nohup java -jar target/*.jar > app.log 2>&1 &         # ✅ Starts app in background, logs to app.log
+          EOF
 
-    - name: Deploy App via SSH
-      uses: appleboy/ssh-action@v1.0.0
-      with:
-        host: ${{ env.EC2_IP }}
-        username: ubuntu
-        key: ${{ secrets.EC2_SSH_KEY }}
-        script: |
-          sudo apt update -y
-          sudo apt install -y nginx
-          echo "<h1>Deployed by GitHub Actions</h1>" | sudo tee /var/www/html/index.html
-          sudo systemctl restart nginx
+      - name: Upload Logs to S3
+        run: |
+          scp -i ec2_key.pem ubuntu@$EC2_IP:/home/ubuntu/app/output.log .  # 🔧 Replace 'yourjavarepo' with actual path if different
+          aws s3 cp app.log s3://$BUCKET_NAME/logs/output.log
 
-    - name: Upload Deployment Log to S3
-      run: |
-        echo "Deployment completed at $(date)" > deploy.log
-        aws s3 cp deploy.log s3://your-s3-bucket-name/logs/${{ env.TF_VAR_stage }}-deploy.log
-
-    - name: Health Check - Port 80
-      run: |
-        if curl -s --head http://${{ env.EC2_IP }} | grep "200 OK" > /dev/null; then
-          echo "App is healthy on port 80"
-        else
-          echo "App failed to start" && exit 1
-        fi
+      - name: Health Check - Port 80
+        run: |
+          for i in {1..10}; do
+            status=$(curl -s -o /dev/null -w "%{http_code}" http://$EC2_IP)
+            if [ "$status" -eq 200 ]; then
+              echo "✅ App is healthy on port 80"
+              exit 0
+            fi
+            echo "Waiting for app... ($i)"
+            sleep 10
+          done
+          echo "❌ App failed health check"
+          exit 1
