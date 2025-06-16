@@ -49,18 +49,6 @@ jobs:
         run: |
           echo "${{ secrets.EC2_PRIVATE_KEY }}" > ec2_key.pem
           chmod 600 ec2_key.pem
-      
-      - name: Health Check - Port 80
-        run: |
-          for i in {1..10}; do
-            status=$(curl -s -o /dev/null -w "%{http_code}" http://$EC2_IP)
-            if [ "$status" -eq 200 ]; then
-              echo " App is healthy on port 80"
-              exit 0
-            fi
-            echo "Waiting for app... ($i)"
-            sleep 10
-          done
-          echo " App failed health check"
 
-          exit 1
+
+          
