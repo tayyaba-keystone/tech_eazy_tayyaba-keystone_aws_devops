@@ -49,10 +49,7 @@ jobs:
         run: |
           echo "${{ secrets.EC2_PRIVATE_KEY }}" > ec2_key.pem
           chmod 600 ec2_key.pem
-      - name: Upload Logs to S3
-        run: |
-          scp -o StrictHostKeyChecking=no -i ec2_key.pem ubuntu@$EC2_IP:/home/ubuntu/app.log .
-          aws s3 cp app.log s3://$BUCKET_NAME/logs/output.log
+      
       - name: Health Check - Port 80
         run: |
           for i in {1..10}; do
