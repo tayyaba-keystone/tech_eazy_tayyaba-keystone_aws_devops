@@ -2,7 +2,7 @@ data "template_file" "user_data" {
   template = file("${path.module}/setup.sh")
 
   vars = {
-    repo_url    = var.repo_url
+    
     bucket_name = var.bucket_name
   }
 }
