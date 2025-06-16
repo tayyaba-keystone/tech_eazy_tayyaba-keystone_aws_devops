@@ -3,10 +3,10 @@ name: Deploy Java App via Terraform
 on:
   push:
     branches:
-      - main                       # ✅ Triggers workflow when you push to main branch
+      - main
     tags:
-      - deploy-dev                 # ✅ You can also trigger by pushing tag 'deploy-dev'
-      - deploy-prod                # ✅ Or tag 'deploy-prod'
+      - deploy-dev
+      - deploy-prod
 
 jobs:
   deploy:
@@ -14,9 +14,10 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      BUCKET_NAME: ${{ secrets.TF_VAR_BUCKET_NAME }}             # ✅ Your S3 bucket name from GitHub Secrets
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}       # ✅ AWS access key
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }} # ✅ AWS secret key
+      BUCKET_NAME: ${{ secrets.TF_VAR_BUCKET_NAME }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: us-east-1
 
     steps:
       - name: Checkout Code
@@ -25,7 +26,7 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.6.0                               # ✅ You can modify Terraform version if needed
+          terraform_version: 1.6.0
 
       - name: Terraform Init
         run: terraform init
@@ -37,49 +38,32 @@ jobs:
         run: terraform apply -auto-approve -var="bucket_name=${{ env.BUCKET_NAME }}"
 
       - name: Get EC2 Public IP
-        id: getip
+        shell: bash
         run: |
           IP=$(aws ec2 describe-instances \
-            --filters "Name=tag:Name,Values=my-ec2" \             # 🔧 Replace 'my-ec2' with your actual EC2 Name tag if different
+            --filters Name=tag:Name,Values=AppServer \
             --query "Reservations[*].Instances[*].PublicIpAddress" \
-            --output text)
-          echo "EC2_IP=$IP" >> $GITHUB_ENV
-          echo "::set-output name=ec2ip::$IP"
-
+            --output text | tr -d '\r')
+          echo "EC2_IP=${IP}" >> $GITHUB_ENV
       - name: Save EC2 private key
         run: |
-          echo "${{ secrets.EC2_PRIVATE_KEY }}" > ec2_key.pem    # ✅ Save your private key securely
+          echo "${{ secrets.EC2_PRIVATE_KEY }}" > ec2_key.pem
           chmod 600 ec2_key.pem
-
-      - name: SSH and Deploy Java App
-        run: |
-          ssh -o StrictHostKeyChecking=no -i ec2_key.pem ubuntu@$EC2_IP << EOF
-            sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys B1998361219BD9C9
-            sudo apt-add-repository 'deb https://repos.azul.com/zulu/deb stable main' -y
-            sudo apt update -y
-            sudo apt install -y zulu21-jdk
-       
-            git clone https://github.com/techeazy-consulting/techeazy-devops.git   # 🔧 Replace with your actual Java app GitHub repo
-                                              
-            ./mvnw clean package -DskipTests                      # ✅ Compile your Java project — use mvn or ./mvnw based on your setup
-            nohup java -jar target/*.jar > app.log 2>&1 &         # ✅ Starts app in background, logs to app.log
-          EOF
-
       - name: Upload Logs to S3
         run: |
-          scp -i ec2_key.pem ubuntu@$EC2_IP:/home/ubuntu/app/output.log .  # 🔧 Replace 'yourjavarepo' with actual path if different
+          scp -o StrictHostKeyChecking=no -i ec2_key.pem ubuntu@$EC2_IP:/home/ubuntu/app.log .
           aws s3 cp app.log s3://$BUCKET_NAME/logs/output.log
-
       - name: Health Check - Port 80
         run: |
           for i in {1..10}; do
             status=$(curl -s -o /dev/null -w "%{http_code}" http://$EC2_IP)
             if [ "$status" -eq 200 ]; then
-              echo "✅ App is healthy on port 80"
+              echo " App is healthy on port 80"
               exit 0
             fi
             echo "Waiting for app... ($i)"
             sleep 10
           done
-          echo "❌ App failed health check"
+          echo " App failed health check"
+
           exit 1
