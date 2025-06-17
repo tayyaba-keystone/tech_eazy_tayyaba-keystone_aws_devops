@@ -1,4 +1,4 @@
-![image](https://github.com/user-attachments/assets/dd53aa5d-7d58-4522-8b0d-db7a32caa6a6)# Assignment 2 & Assignment3
+# Assignment 2 & Assignment3
 
 This project automatically creates an EC2 instance and an S3 bucket using Terraform. When the EC2 instance is stopped or shut down, it uploads log files to the S3 bucket This perform using terraform CLI as well as GitHub Action.
 
