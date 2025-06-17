@@ -37,14 +37,14 @@ The infrastructure setup and deployment is performed using:
 # 🤖 Execution via GitHub Actions
   Set the following GitHub Secrets in your repository:
   
-  AWS_ACCESS_KEY_ID (AWS IAM user credentials)
-  AWS_SECRET_ACCESS_KEY (AWS IAM secret key)
-  EC2_PRIVATE_KEY  (use own Private key contents (my private key name devops-key.pem)
-  TF_VAR_BUCKET_NAME (provide S3 buket name dynamically)
+- AWS_ACCESS_KEY_ID (AWS IAM user credentials)
+- AWS_SECRET_ACCESS_KEY (AWS IAM secret key)
+- EC2_PRIVATE_KEY  (use own Private key contents (my private key name devops-key.pem)
+- TF_VAR_BUCKET_NAME (provide S3 buket name dynamically)
 
-  Sample Workflow File: .github/workflows/deploy.yml
+- Sample Workflow File: .github/workflows/deploy.yml
 
-  Workflow Trigger:
+- Workflow Trigger:
   On push to main branch
   Includes steps to initialize, plan, apply Terraform, Get EC2 public Ip, save EC2 private key
   After triggerd EC2, S3, Roles, S3WriteOnlyPolicy are creadted 
