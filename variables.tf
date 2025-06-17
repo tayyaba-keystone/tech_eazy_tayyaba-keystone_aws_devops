@@ -4,7 +4,7 @@ variable "region" {
 
 variable "ami_id" {
   description = "Ubuntu AMI ID"
-  default     = "ami-0c2b8ca1dad447f8a" # example Ubuntu AMI
+  default     = "ami-0e86e20dae9224db8" # example Ubuntu AMI
 }
 
 variable "instance_type" {
@@ -14,4 +14,8 @@ variable "instance_type" {
 variable "bucket_name" {
   description = "Private S3 bucket name"
   type        = string
+}
+
+variable "repo_url" {
+  default = "https://github.com/techeazy-consulting/techeazy-devops.git"
 }
