@@ -47,7 +47,7 @@ The infrastructure setup and deployment is performed using:
 - Workflow Trigger:
   On push to main branch
   Includes steps to initialize, plan, apply Terraform, Get EC2 public Ip, save EC2 private key
-  After triggerd EC2, S3, Roles, S3WriteOnlyPolicy are creadted 
+- After triggerd EC2, S3, Roles, S3WriteOnlyPolicy are creadted 
 
 ##  Screenshots
 
