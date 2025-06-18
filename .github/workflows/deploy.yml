@@ -57,3 +57,4 @@ jobs:
           scp -o StrictHostKeyChecking=no -i ec2_key.pem setup.sh ubuntu@${{ env.EC2_IP }}:/home/ubuntu/
           ssh -o StrictHostKeyChecking=no -i ec2_key.pem ubuntu@${{ env.EC2_IP }} "bash setup.sh ${{ env.BUCKET_NAME }}"
 
+
