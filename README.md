@@ -1,6 +1,6 @@
 # Assignment 2 & Assignment3
 
-This project automatically creates an EC2 instance and an S3 bucket using Terraform. When the EC2 instance is stopped or shut down, it uploads log files to the S3 bucket.
+This project automatically creates an EC2 instance and an S3 bucket using Terraform. When the EC2 instance is stopped or shut down, it uploads log files to the S3 bucket This perform using terraform CLI as well as GitHub Action.
 
 ##  Tools Used
 
@@ -10,14 +10,44 @@ This project automatically creates an EC2 instance and an S3 bucket using Terraf
 - IAM (for roles and permissions)
 - Bash script (user_data)
 
-##  Files Included
+## 🚀 execution steps for both Terraform CLI and GitHub Actions
+This project automatically provisions an EC2 instance and an S3 bucket using Terraform. When the EC2 instance is stopped or shut down, it uploads its application log file (app.log) to the S3 bucket.
 
-- `main.tf` – AWS provider
-- `variables.tf` – Variables like region, AMI, bucket name
-- `iam.tf` – IAM roles and policies
-- `s3.tf` – S3 bucket and lifecycle rule
-- `ec2.tf` – EC2 instance setup and security group
-- `setup.sh` – Script to upload logs on shutdown
+The infrastructure setup and deployment is performed using:
+
+✅ Terraform CLI
+
+✅ GitHub Actions (CI/CD)
+
+ℹ️ Note: During Terraform execution, the S3 bucket name is provided dynamically via -var="bucket_name=your-bucket-name".(I have passed devops-techeazy)
+
+# ⚙️ Execution via Terraform CLI
+- Initialize Terraform
+  terraform init
+
+- Plan Infrastructure
+  terraform plan -var="bucket_name=your-bucket-name"
+
+- Apply Infrastructure
+  terraform apply -auto-approve -var="bucket_name=your-bucket-name"
+
+- Destroy Infrastructure
+  terraform destroy -auto-approve -var="bucket_name=your-bucket-name"
+
+# 🤖 Execution via GitHub Actions
+  Set the following GitHub Secrets in your repository:
+  
+- AWS_ACCESS_KEY_ID (AWS IAM user credentials)
+- AWS_SECRET_ACCESS_KEY (AWS IAM secret key)
+- EC2_PRIVATE_KEY  (use own Private key contents (my private key name devops-key.pem)
+- TF_VAR_BUCKET_NAME (provide S3 buket name dynamically)
+
+- Sample Workflow File: .github/workflows/deploy.yml
+
+- Workflow Trigger:
+  On push to main branch
+  Includes steps to initialize, plan, apply Terraform, Get EC2 public Ip, save EC2 private key
+- After triggerd EC2, S3, Roles, S3WriteOnlyPolicy are creadted 
 
 ##  Screenshots
 
@@ -48,5 +78,8 @@ S3 lifecycle rule to delete logs after 7 days
 
 Use Role 1a to list files:Verified via AWS CLI with read-only role instance
 ![Image](https://github.com/user-attachments/assets/d9792abd-af32-4002-beb3-d4e700197c52)
+
+GitHub Action Triggerd output 
+![Image](https://github.com/user-attachments/assets/1323da8a-bf27-4020-bcef-4125880bd2c8)
 
 

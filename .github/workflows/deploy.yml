@@ -1,4 +1,8 @@
+<<<<<<< review
 name: Deployment of infrastructure using GitHub
+=======
+name: Deployment using GitHub action
+>>>>>>> main
 
 on:
   push:
@@ -50,9 +54,19 @@ jobs:
         run: |
           echo "${{ secrets.EC2_PRIVATE_KEY }}" > ec2_key.pem
           chmod 600 ec2_key.pem
+          
+      - name: Upload Logs to S3
+        run: |
+          chmod +x setup.sh
+          scp -o StrictHostKeyChecking=no -i ec2_key.pem setup.sh ubuntu@${{ env.EC2_IP }}:/home/ubuntu/
+          ssh -o StrictHostKeyChecking=no -i ec2_key.pem ubuntu@${{ env.EC2_IP }} "bash setup.sh ${{ env.BUCKET_NAME }}"
 
+<<<<<<< review
       - name: Upload Logs to S3
         run: |
           chmod +x scripts/shutdown_and_upload.sh
           scp -o StrictHostKeyChecking=no -i ec2_key.pem scripts/shutdown_and_upload.sh ubuntu@${{ env.EC2_IP }}:/home/ubuntu/
           ssh -o StrictHostKeyChecking=no -i ec2_key.pem ubuntu@${{ env.EC2_IP }} "bash shutdown_and_upload.sh ${{ env.BUCKET_NAME }}"
+=======
+      
+>>>>>>> main
