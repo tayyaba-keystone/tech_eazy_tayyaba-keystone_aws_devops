@@ -1,0 +1,37 @@
+name: Destroy Dev/Prod Infra
+
+on:
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: 'Stage to destroy (dev or prod)'
+        required: true
+        default: 'dev'
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repo
+      uses: actions/checkout@v3
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Set up Terraform
+      uses: hashicorp/setup-terraform@v2
+
+    - name: Terraform Init
+      run: terraform init
+
+    - name: Terraform Destroy
+      run: |
+        terraform destroy -auto-approve \
+          -var="stage=${{ github.event.inputs.stage }}" \
+          -var="bucket_name=tayyaba-devops-app-logs-techeazy" \
+          -var="github_token=${{ secrets.GH_PAT }}"
