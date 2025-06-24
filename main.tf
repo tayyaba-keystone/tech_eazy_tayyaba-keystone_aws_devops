@@ -45,7 +45,7 @@ resource "aws_iam_instance_profile" "instance_profile" {
 }
 
 resource "aws_s3_bucket" "logs_bucket" {
-  bucket        = var.bucket_name
+  bucket        = "${var.bucket_name}-${var.stage}"  # <--- stage-specific
   force_destroy = true
 }
 
@@ -71,7 +71,7 @@ data "aws_vpc" "default" {
 
 # 🔸 Security Group for port 22, 80, 8080
 resource "aws_security_group" "app_sg" {
-  name        = "default-app-sg"
+  name        = "default-app-sg-${var.stage}"  # <--- make it unique per stage
   description = "Allow SSH, HTTP, and App port"
   vpc_id      = data.aws_vpc.default.id
 
