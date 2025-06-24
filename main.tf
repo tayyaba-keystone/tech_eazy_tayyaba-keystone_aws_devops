@@ -53,7 +53,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "logs_lifecycle" {
   bucket = aws_s3_bucket.logs_bucket.id
 
   rule {
-    id     = "delete-logs"
+    id     = "delete-logs-after7day"
     status = "Enabled"
 
     filter {}
@@ -116,6 +116,7 @@ resource "aws_instance" "app_instance" {
   user_data = templatefile("${var.stage}_setup.sh", {
     bucket = var.bucket_name,
     stage  = var.stage
+    github_token  = var.github_token
   })
 
    # ✅ Add this line below user_data

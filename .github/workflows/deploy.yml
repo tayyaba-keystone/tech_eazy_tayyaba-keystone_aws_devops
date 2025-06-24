@@ -28,4 +28,16 @@ jobs:
       run: terraform init
 
     - name: Terraform Apply
-      run: terraform apply -auto-approve -var="stage=${{ github.ref_name == 'refs/tags/deploy-prod' && 'prod' || 'dev' }}" -var="bucket_name=tayyaba-devops-app-logs-techeazy"
+      run: |
+        TAG_NAME=${GITHUB_REF#refs/tags/}
+        if [[ "$TAG_NAME" == "deploy-prod" ]]; then
+          STAGE="prod"
+        else
+          STAGE="dev"
+        fi
+        terraform apply -auto-approve \
+          -var="stage=$STAGE" \
+          -var="bucket_name=tayyaba-devops-app-logs-techeazy" \
+          -var="github_token=${{ secrets.GH_PAT }}"
+      env:
+        GITHUB_REF: ${{ github.ref }}

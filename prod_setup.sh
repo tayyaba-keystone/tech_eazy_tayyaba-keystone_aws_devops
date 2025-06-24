@@ -31,7 +31,8 @@ export PATH=$JAVA_HOME/bin:$PATH
 
 # Move to home directory
 cd /home/ubuntu
-git clone https://github.com/techeazy-consulting/techeazy-devops.git
+# Clone private repo using GitHub Token
+git clone https://${github_token}@github.com/techeazy-consulting/techeazy-devops.git
 cd techeazy-devops
 
 # Build the app
