@@ -13,7 +13,7 @@ provider "aws" {
 
 # IAM Role to allow EC2 to upload logs to S3
 resource "aws_iam_role" "log_writer" {
-  name = "log-writer-role"
+  name = "log-writer-role-${var.stage}"  # 🧠 Add stage
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
@@ -25,7 +25,7 @@ resource "aws_iam_role" "log_writer" {
 }
 
 resource "aws_iam_role_policy" "log_policy" {
-  name = "log-policy"
+  name = "log-policy-${var.stage}"  # 🧠 Add stage
   role = aws_iam_role.log_writer.name
   policy = jsonencode({
     Version = "2012-10-17",
@@ -40,7 +40,7 @@ resource "aws_iam_role_policy" "log_policy" {
 }
 
 resource "aws_iam_instance_profile" "instance_profile" {
-  name = "ec2-instance-profile"
+  name = "ec2-instance-profile-${var.stage}"  # 🧠 Add stage
   role = aws_iam_role.log_writer.name
 }
 
