@@ -1,0 +1,4 @@
+{
+  "env": "prod",
+  "java_version": "21"
+}
