@@ -30,6 +30,7 @@ resource "aws_iam_role_policy" "log_policy" {
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
+    
       {
         Effect = "Allow",
         Action = ["s3:PutObject"],
@@ -40,7 +41,7 @@ resource "aws_iam_role_policy" "log_policy" {
 }
 
 resource "aws_iam_instance_profile" "instance_profile" {
-  name = "ec2-instance-profile-${var.stage}"  # 🧠 Add stage
+  name = "ec2-instance-profile-${var.stage}"  # 🧠 Add stage for dev and prod
   role = aws_iam_role.log_writer.name
 }
 
