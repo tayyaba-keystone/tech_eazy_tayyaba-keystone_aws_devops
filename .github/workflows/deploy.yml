@@ -27,17 +27,20 @@ jobs:
     - name: Terraform Init
       run: terraform init
 
-    - name: Terraform Apply
+    - name: Determine Stage
+      id: stage
       run: |
         TAG_NAME=${GITHUB_REF#refs/tags/}
         if [[ "$TAG_NAME" == "deploy-prod" ]]; then
-          STAGE="prod"
+          echo "stage=prod" >> "$GITHUB_OUTPUT"
         else
-          STAGE="dev"
+          echo "stage=dev" >> "$GITHUB_OUTPUT"
         fi
+
+    - name: Terraform Apply (${{ steps.stage.outputs.stage }})
+      run: |
+        echo "Deploying to stage: ${{ steps.stage.outputs.stage }}"
         terraform apply -auto-approve \
-          -var="stage=$STAGE" \
+          -var="stage=${{ steps.stage.outputs.stage }}" \
           -var="bucket_name=tayyaba-devops-app-logs-techeazy" \
           -var="github_token=${{ secrets.GH_PAT }}"
-      env:
-        GITHUB_REF: ${{ github.ref }}
