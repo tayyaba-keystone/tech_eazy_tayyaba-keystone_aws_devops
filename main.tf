@@ -13,7 +13,7 @@ provider "aws" {
 
 # IAM Role to allow EC2 to upload logs to S3
 resource "aws_iam_role" "log_writer" {
-  name = "log-writer-role-${var.stage}"  # 🧠 Add stage
+  name = "log-writer-role-${var.stage}"
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
@@ -43,8 +43,16 @@ resource "aws_iam_policy_attachment" "attach_log_policy" {
   roles      = [aws_iam_role.log_writer.name]
   policy_arn = aws_iam_policy.log_policy.arn
 }
+
+# ✅ Fix: Add missing instance profile block
+resource "aws_iam_instance_profile" "instance_profile" {
+  name = "ec2-instance-profile-${var.stage}"
+  role = aws_iam_role.log_writer.name
+}
+
+# Create stage-specific S3 bucket
 resource "aws_s3_bucket" "logs_bucket" {
-  bucket        = "${var.bucket_name}-${var.stage}"  # <--- stage-specific
+  bucket        = "${var.bucket_name}-${var.stage}"
   force_destroy = true
 }
 
@@ -63,14 +71,14 @@ resource "aws_s3_bucket_lifecycle_configuration" "logs_lifecycle" {
   }
 }
 
-# 🔸 Get Default VPC ID
+# Get Default VPC
 data "aws_vpc" "default" {
   default = true
 }
 
-# 🔸 Security Group for port 22, 80, 8080
+# Security Group (ports 22, 80, 8080)
 resource "aws_security_group" "app_sg" {
-  name        = "default-app-sg-${var.stage}"  # <--- make it unique per stage
+  name        = "default-app-sg-${var.stage}"
   description = "Allow SSH, HTTP, and App port"
   vpc_id      = data.aws_vpc.default.id
 
@@ -106,18 +114,20 @@ resource "aws_security_group" "app_sg" {
     Name = "Sg-ssh-http"
   }
 }
+
+# EC2 Instance
 resource "aws_instance" "app_instance" {
   ami                    = var.ami
   instance_type          = var.instance_type
   iam_instance_profile   = aws_iam_instance_profile.instance_profile.name
-  vpc_security_group_ids = [aws_security_group.app_sg.id]   # ✅ THIS IS IMPORTANT
+  vpc_security_group_ids = [aws_security_group.app_sg.id]
 
   user_data = templatefile("${var.stage}_setup.sh", {
-    bucket = var.bucket_name,
-    stage  = var.stage
+    bucket        = var.bucket_name,
+    stage         = var.stage,
     github_token  = var.github_token
   })
-
+   
    # ✅ Add this line below user_data
   user_data_replace_on_change = true
 
