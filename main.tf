@@ -25,16 +25,15 @@ resource "aws_iam_role" "log_writer" {
 }
 
 resource "aws_iam_role_policy" "log_policy" {
-  name = "log-policy-${var.stage}"  # 🧠 Add stage prod and dev 
+  name = "log-policy-${var.stage}"
   role = aws_iam_role.log_writer.name
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
-    
       {
         Effect = "Allow",
         Action = ["s3:PutObject"],
-        Resource = "arn:aws:s3:::${var.bucket_name}/*"
+        Resource = "arn:aws:s3:::${var.bucket_name}-${var.stage}/*"
       }
     ]
   })
