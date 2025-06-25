@@ -60,4 +60,4 @@ else
 fi
 
 # Upload logs to S3
-aws s3 cp app.log s3://${bucket}/logs/${stage}/app.log
+aws s3 cp app.log s3://${bucket}-${stage}/logs/${stage}/app.log
