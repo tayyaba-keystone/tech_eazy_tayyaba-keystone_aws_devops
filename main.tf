@@ -24,9 +24,8 @@ resource "aws_iam_role" "log_writer" {
   })
 }
 
-resource "aws_iam_role_policy" "log_policy" {
+resource "aws_iam_policy" "log_policy" {
   name = "log-policy-${var.stage}"
-  role = aws_iam_role.log_writer.name
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
@@ -39,11 +38,11 @@ resource "aws_iam_role_policy" "log_policy" {
   })
 }
 
-resource "aws_iam_instance_profile" "instance_profile" {
-  name = "ec2-instance-profile-${var.stage}"  # 🧠 Add stage for dev and prod
-  role = aws_iam_role.log_writer.name
+resource "aws_iam_policy_attachment" "attach_log_policy" {
+  name       = "attach-log-policy-${var.stage}"
+  roles      = [aws_iam_role.log_writer.name]
+  policy_arn = aws_iam_policy.log_policy.arn
 }
-
 resource "aws_s3_bucket" "logs_bucket" {
   bucket        = "${var.bucket_name}-${var.stage}"  # <--- stage-specific
   force_destroy = true
