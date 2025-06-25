@@ -25,7 +25,7 @@ resource "aws_iam_role" "log_writer" {
 }
 
 resource "aws_iam_role_policy" "log_policy" {
-  name = "log-policy-${var.stage}"  # 🧠 Add stage
+  name = "log-policy-${var.stage}"  # 🧠 Add stage prod and dev 
   role = aws_iam_role.log_writer.name
   policy = jsonencode({
     Version = "2012-10-17",
