@@ -50,6 +50,8 @@ resource "aws_iam_instance_profile" "instance_profile" {
   role = aws_iam_role.log_writer.name
 }
 
+# add a specific policy for s3 dev and s3 prod
+
 # Create stage-specific S3 bucket
 resource "aws_s3_bucket" "logs_bucket" {
   bucket        = "${var.bucket_name}-${var.stage}"
