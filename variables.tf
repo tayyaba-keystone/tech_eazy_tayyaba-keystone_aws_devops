@@ -1,3 +1,5 @@
+# declare all the variables
+
 variable "stage" {}
 variable "ami" {
   default = "ami-020cba7c55df1f615"
