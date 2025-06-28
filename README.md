@@ -16,7 +16,7 @@ This project demonstrates a **multi-stage deployment pipeline** using **Terrafor
 - Created separate configuration files:
   - `dev_config.json`
   - `prod_config.json`
-- These can be injected into EC2 instances during provisioning.
+- These can be injected into EC2 instances during automating.
 
 ---
 
