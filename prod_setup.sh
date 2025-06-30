@@ -50,6 +50,31 @@ TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" \
 EC2_IP=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" \
   http://169.254.169.254/latest/meta-data/public-ipv4)
 
+  # Install and configure CloudWatch Agent
+sudo apt install -y amazon-cloudwatch-agent
+
+sudo tee /opt/aws/amazon-cloudwatch-agent/bin/config.json > /dev/null <<EOF
+{
+  "logs": {
+    "logs_collected": {
+      "files": {
+        "collect_list": [
+          {
+            "file_path": "/home/ubuntu/app.log",
+            "log_group_name": "/ec2/app-logs-${stage}",
+            "log_stream_name": "{instance_id}"
+          }
+        ]
+      }
+    }
+  }
+}
+EOF
+
+sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+  -a fetch-config -m ec2 \
+  -c file:/opt/aws/amazon-cloudwatch-agent/bin/config.json -s
+
 # Health check
 PORT_STATUS=$(curl -s -o /dev/null -w '%%{http_code}' http://$EC2_IP:8080)
 
@@ -61,3 +86,4 @@ fi
 
 # Upload logs to S3
 aws s3 cp app.log s3://${bucket}-${stage}/logs/${stage}/app.log
+

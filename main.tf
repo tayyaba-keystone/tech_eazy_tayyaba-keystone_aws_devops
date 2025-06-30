@@ -51,6 +51,27 @@ resource "aws_iam_instance_profile" "instance_profile" {
   role = aws_iam_role.log_writer.name
 }
 
+resource "aws_iam_policy" "log_policy" {
+  name = "log-policy-${var.stage}"
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "s3:PutObject",
+          "logs:CreateLogStream",
+          "logs:CreateLogGroup",
+          "logs:PutLogEvents",
+          "logs:DescribeLogStreams",
+          "logs:DescribeLogGroups",
+          "sns:Publish"
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+}
 # Create stage-specific S3 bucket
 resource "aws_s3_bucket" "logs_bucket" {
   bucket        = "${var.bucket_name}-${var.stage}"
@@ -135,4 +156,40 @@ resource "aws_instance" "app_instance" {
   tags = {
     Name = "app-${var.stage}"
   }
+}
+
+resource "aws_sns_topic" "alert_topic" {
+  name = "app-alerts-topic-${var.stage}"
+}
+
+resource "aws_sns_topic_subscription" "email_sub" {
+  topic_arn = aws_sns_topic.alert_topic.arn
+  protocol  = "email"
+  endpoint  = var.alert_email
+}
+
+resource "aws_cloudwatch_log_metric_filter" "error_filter" {
+  name           = "error-filter-${var.stage}"
+  log_group_name = "/ec2/app-logs-${var.stage}"
+  pattern        = "\"ERROR\" || \"Exception\""
+
+  metric_transformation {
+    name      = "ErrorCount-${var.stage}"
+    namespace = "AppLogs"
+    value     = "1"
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "error_alarm" {
+  alarm_name          = "app-error-alarm-${var.stage}"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  metric_name         = aws_cloudwatch_log_metric_filter.error_filter.metric_transformation[0].name
+  namespace           = "AppLogs"
+  period              = 60
+  statistic           = "Sum"
+  threshold           = 1
+
+  alarm_description   = "Alarm when error is found in app logs"
+  alarm_actions       = [aws_sns_topic.alert_topic.arn]
 }
