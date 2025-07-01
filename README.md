@@ -55,7 +55,7 @@ This project demonstrates a **multi-stage deployment pipeline** using **Terrafor
 ### 1 GitHub Actions Executed
 Shows Git tag `deploy-dev` or `deploy-prod` used to start workflow.
 
-![Image](https://github.com/user-attachments/assets/338b8661-bba8-46d0-bf0e-7c9c3b314df8)
+![Image](https://github.com/user-attachments/assets/bc396cbb-fc63-4d2f-9980-b2d2809c6451)
 
 ---
 
