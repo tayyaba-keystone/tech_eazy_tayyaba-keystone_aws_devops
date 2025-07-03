@@ -25,10 +25,10 @@ This project automates the provisioning of an AWS EC2 instance using Terraform a
 ![Image](https://github.com/user-attachments/assets/3fc7f2d5-8a9d-408c-97cf-6e65b9f5bd2c)
  
 ### 7️⃣ Alarm Graph Visualization
-Graph Analysis:
-Red bars in the bottom timeline and the red alarm state above mean the alarm is in the In alarm state.
-The metric value (ErrorCount-dev) reached the threshold (>= 1), as shown by the rising line crossing the red threshold line.
-CloudWatch detected error logs and triggered the alarm.
+- Graph Analysis:
+- Red bars in the bottom timeline and the red alarm state above mean the alarm is in the In alarm state.
+- The metric value (ErrorCount-dev) reached the threshold (>= 1), as shown by the rising line crossing the red threshold line.
+- CloudWatch detected error logs and triggered the alarm.
 ![Image](https://github.com/user-attachments/assets/42ce683a-c595-4e10-a6ae-89434f7b702e)
 
 ### 8️⃣ Email Subscription Confirmation
