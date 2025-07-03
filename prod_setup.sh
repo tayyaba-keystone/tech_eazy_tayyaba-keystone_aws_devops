@@ -50,10 +50,12 @@ TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" \
 EC2_IP=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" \
   http://169.254.169.254/latest/meta-data/public-ipv4)
 
-  # Install and configure CloudWatch Agent
-sudo apt install -y amazon-cloudwatch-agent
+# ✅ Install CloudWatch Agent manually (standard AWS method)
+wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
+sudo dpkg -i amazon-cloudwatch-agent.deb
 
-sudo tee /opt/aws/amazon-cloudwatch-agent/bin/config.json > /dev/null <<EOF
+# ✅ Create config file for CloudWatch Agent
+sudo tee /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json > /dev/null <<EOF
 {
   "logs": {
     "logs_collected": {
@@ -66,14 +68,17 @@ sudo tee /opt/aws/amazon-cloudwatch-agent/bin/config.json > /dev/null <<EOF
           }
         ]
       }
-    }
+    },
+    "log_stream_name": "default"
   }
 }
 EOF
 
+# ✅ Start CloudWatch Agent
 sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
   -a fetch-config -m ec2 \
-  -c file:/opt/aws/amazon-cloudwatch-agent/bin/config.json -s
+  -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json -s
+
 
 # Health check
 PORT_STATUS=$(curl -s -o /dev/null -w '%%{http_code}' http://$EC2_IP:8080)

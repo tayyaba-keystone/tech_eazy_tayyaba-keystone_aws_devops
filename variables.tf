@@ -17,3 +17,8 @@ variable "github_token" {
   type        = string
   sensitive   = true
 }
+
+variable "alert_email" {
+  description = "Email for SNS alerts"
+  type        = string
+}
