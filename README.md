@@ -7,35 +7,39 @@ This project automates the provisioning of an AWS EC2 instance using Terraform a
 
 ## 📸 Screenshots
 ### 1️⃣ EC2 Instance Running
-![EC2 Running](screenshots/2_ec2_running.png)
+![Image](https://github.com/user-attachments/assets/40957c88-96df-4930-9105-a49bfffbd3c6)
  
-### 2️⃣ Application Up Check (Port 8080)
-![App Up](screenshots/3_app_up_check.png)
+### 2️⃣ Application Up Check (Port 80)
+![Image](https://github.com/user-attachments/assets/f15882b8-57dd-4418-968d-5b291d52c2b0)
 
  ### 3️⃣ CloudWatch Log Group Visible
-![Log Group](screenshots/4_log_group_view.png)
+![Image](https://github.com/user-attachments/assets/6384a8f4-af82-4ab2-8ebe-8352a4eba81b)
  
 ### 4️⃣ Log Stream Entries in CloudWatch
-![Log Stream](screenshots/5_log_stream_entries.png)
+![Image](https://github.com/user-attachments/assets/38323113-43d1-4698-885b-fb89d71e1a0f)
  
 ### 5️⃣ CloudWatch Metric Filter  (Make sure "ERROR" "Exception")
-![Metric Filter](screenshots/6_metric_filter_created.png)
- 
+![Image](https://github.com/user-attachments/assets/32355817-dedd-412e-8152-bc196f8aef2d)
+
 ### 6️⃣ CloudWatch Alarm Configuration
-![Alarm Configuration](screenshots/7_cloudwatch_alarm_config.png)
+![Image](https://github.com/user-attachments/assets/3fc7f2d5-8a9d-408c-97cf-6e65b9f5bd2c)
  
 ### 7️⃣ Alarm Graph Visualization
-![Alarm Graph](screenshots/8_alarm_graph.png)
- 
+Graph Analysis:
+Red bars in the bottom timeline and the red alarm state above mean the alarm is in the In alarm state.
+The metric value (ErrorCount-dev) reached the threshold (>= 1), as shown by the rising line crossing the red threshold line.
+CloudWatch detected error logs and triggered the alarm.
+![Image](https://github.com/user-attachments/assets/42ce683a-c595-4e10-a6ae-89434f7b702e)
+
 ### 8️⃣ Email Subscription Confirmation
-![SNS Subscription Email](screenshots/9_email_subscription_confirmed.png)
+![Image](https://github.com/user-attachments/assets/a9576865-a190-4d90-b225-ffe4bff9d3ac)
+![Image](https://github.com/user-attachments/assets/33100a88-8e21-40c9-a5d7-6f3aac5b700a)
  
 ### 🔟 Simulated Error Log Entry
-![Simulated Error Log](screenshots/10_simulated_error_log.png)
+![Image](https://github.com/user-attachments/assets/6b517970-89d2-4f80-a17d-b3a7ab677b28)
  
 ### 📧 Email Alert Received
-![Email Alert](screenshots/12_alarm_email_received.png)
- 
+![Image](https://github.com/user-attachments/assets/1c02a1cd-36fd-411a-90c3-e7b2bf881034)
 
 
 
