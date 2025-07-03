@@ -174,7 +174,7 @@ resource "aws_cloudwatch_log_metric_filter" "error_filter" {
   depends_on = [aws_cloudwatch_log_group.app_logs]
 }
 
-# CloudWatch Alarm
+# CloudWatch Alarm.
 resource "aws_cloudwatch_metric_alarm" "error_alarm" {
   alarm_name          = "app-error-alarm-${var.stage}"
   comparison_operator = "GreaterThanOrEqualToThreshold"
