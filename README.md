@@ -1,65 +1,39 @@
-## ✅ Parameterized Multi-Stage Deployment (DevOps)
+# 🚀 DevOps Assignment 5 – Log Streaming, CloudWatch Alarm & SNS Email Alert
 
-This project demonstrates a **multi-stage deployment pipeline** using **Terraform** and **GitHub Actions**, supporting dynamic environments for both `dev` and `prod`.
-
----
-
-### 🚀 Features Implemented
-
-#### 🧩 1. Stage-Based Infrastructure Deployment
-- Used `Terraform` input variables and GitHub tags to manage multiple stages.
-- Triggered by:
-  - `deploy-dev` → Deploys `dev` infrastructure.
-  - `deploy-prod` → Deploys `prod` infrastructure.
-
-#### 🧾 2. Configuration Separation
-- Created separate configuration files:
-  - `dev_config.json`
-  - `prod_config.json`
-- These can be injected into EC2 instances during provisioning.
+This project automates the provisioning of an AWS EC2 instance using Terraform and deploys a Spring Boot application. It then streams logs to CloudWatch, sets up metric filters and alarms on error patterns, and sends alerts to email via SNS.
 
 ---
 
-### 🔐 3. Public & Private GitHub Repo Strategy
+## 🔁 Output Flow & Screenshot Sequence
+## 📸 Screenshots
+### 1️⃣ EC2 Instance Running
+![EC2 Running](screenshots/2_ec2_running.png)
+ 
+### 2️⃣ Application Up Check (Port 8080)
+![App Up](screenshots/3_app_up_check.png)
+ ### 3️⃣ CloudWatch Log Group Visible
+![Log Group](screenshots/4_log_group_view.png)
+ 
+### 4️⃣ Log Stream Entries in CloudWatch
+![Log Stream](screenshots/5_log_stream_entries.png)
+ 
+### 5️⃣ CloudWatch Metric Filter  (Make sure "ERROR" "Exception")
+![Metric Filter](screenshots/6_metric_filter_created.png)
+ 
+### 6️⃣ CloudWatch Alarm Configuration
+![Alarm Configuration](screenshots/7_cloudwatch_alarm_config.png)
+ 
+### 7️⃣ Alarm Graph Visualization
+![Alarm Graph](screenshots/8_alarm_graph.png)
 
-| Stage  | Repo Type   | Strategy                                                                 |
-|--------|-------------|--------------------------------------------------------------------------|
-| Dev    | Public Repo | Cloned via `git clone https://github.com/...`                            |
-| Prod   | Private Repo| Cloned using a GitHub Token (`https://${token}@github.com/...`)          |
+### 8️⃣ Email Subscription Confirmation
+![SNS Subscription Email](screenshots/9_email_subscription_confirmed.png)
 
-- The provisioning script checks the stage and pulls code from the appropriate repo.
+### 🔟 Simulated Error Log Entry
+![Simulated Error Log](screenshots/10_simulated_error_log.png)
 
----
+### 🔔 Alarm Triggered
+![Alarm Triggered](screenshots/11_alarm_triggered.png)
 
-### 🔑 4. GitHub Token Handling
-- Stored GitHub Personal Access Token (PAT) securely in GitHub Secrets (`GH_PAT`).
-- Passed into Terraform as a variable.
-- Used only in **prod** provisioning scripts to access the private repo securely.
-
----
-
-### 📦 5. Stage-Based S3 Log Upload
-- Application logs are pushed to stage-specific folders in S3:
-  - `s3://<bucket-name>-dev/logs/dev/app.log`
-  - `s3://<bucket-name>-prod/logs/prod/app.log`
-
----
-
-### 🩺 6. Post-Deployment Health Check
-- Performs a health check on port `80` after EC2 provisioning.
-- Logs success or failure.
-- Log file is uploaded to the corresponding S3 bucket.
-
----
-
-### 🧪 How to Trigger Deployment
-
-```bash
-# Deploy to Dev
-git tag deploy-dev
-git push origin deploy-dev
-
-# Deploy to Prod
-git tag deploy-prod
-git push origin deploy-prod
-
+### 📧 Email Alert Received
+![Email Alert](screenshots/12_alarm_email_received.png)
