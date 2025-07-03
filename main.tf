@@ -11,7 +11,7 @@ provider "aws" {
   region = var.region
 }
 
-# IAM Role to allow EC2 to upload logs to S3
+# IAM Role to allow EC2 to upload logs to S3 and push logs to CloudWatch
 resource "aws_iam_role" "log_writer" {
   name = "log-writer-role-${var.stage}"
   assume_role_policy = jsonencode({
@@ -23,7 +23,6 @@ resource "aws_iam_role" "log_writer" {
     }]
   })
 }
-
 resource "aws_iam_policy" "log_policy" {
   name = "log-policy-${var.stage}"
   policy = jsonencode({
@@ -31,8 +30,16 @@ resource "aws_iam_policy" "log_policy" {
     Statement = [
       {
         Effect = "Allow",
-        Action = ["s3:PutObject"],
-        Resource = "arn:aws:s3:::${var.bucket_name}-${var.stage}/*"
+        Action = [
+          "s3:PutObject",
+          "logs:CreateLogStream",
+          "logs:CreateLogGroup",
+          "logs:PutLogEvents",
+          "logs:DescribeLogStreams",
+          "logs:DescribeLogGroups",
+          "sns:Publish"
+        ],
+        Resource = "*"
       }
     ]
   })
@@ -44,11 +51,12 @@ resource "aws_iam_policy_attachment" "attach_log_policy" {
   policy_arn = aws_iam_policy.log_policy.arn
 }
 
-# ✅ Fix: Add missing instance profile block
 resource "aws_iam_instance_profile" "instance_profile" {
   name = "ec2-instance-profile-${var.stage}"
   role = aws_iam_role.log_writer.name
 }
+
+# add a specific policy for s3 dev and s3 prod
 
 # Create stage-specific S3 bucket
 resource "aws_s3_bucket" "logs_bucket" {
@@ -127,11 +135,56 @@ resource "aws_instance" "app_instance" {
     stage         = var.stage,
     github_token  = var.github_token
   })
-   
-   # ✅ Add this line below user_data
+
   user_data_replace_on_change = true
 
   tags = {
     Name = "app-${var.stage}"
   }
+}
+
+# CloudWatch Log Group - Explicitly create this
+resource "aws_cloudwatch_log_group" "app_logs" {
+  name              = "/ec2/app-logs-${var.stage}"
+  retention_in_days = 7
+}
+
+# SNS for log alert
+resource "aws_sns_topic" "alert_topic" {
+  name = "app-alerts-topic-${var.stage}"
+}
+
+resource "aws_sns_topic_subscription" "email_sub" {
+  topic_arn = aws_sns_topic.alert_topic.arn
+  protocol  = "email"
+  endpoint  = var.alert_email
+}
+
+# CloudWatch Log Metric Filter
+resource "aws_cloudwatch_log_metric_filter" "error_filter" {
+  name           = "error-filter-${var.stage}"
+  log_group_name = "/ec2/app-logs-${var.stage}"
+  pattern        = "\"ERROR\" \"Exception\""
+
+  metric_transformation {
+    name      = "ErrorCount-${var.stage}"
+    namespace = "AppLogs"
+    value     = "1"
+  }
+  depends_on = [aws_cloudwatch_log_group.app_logs]
+}
+
+# CloudWatch Alarm
+resource "aws_cloudwatch_metric_alarm" "error_alarm" {
+  alarm_name          = "app-error-alarm-${var.stage}"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  metric_name         = aws_cloudwatch_log_metric_filter.error_filter.metric_transformation[0].name
+  namespace           = "AppLogs"
+  period              = 60
+  statistic           = "Sum"
+  threshold           = 1
+
+  alarm_description   = "Alarm when error is found in app logs"
+  alarm_actions       = [aws_sns_topic.alert_topic.arn]
 }
