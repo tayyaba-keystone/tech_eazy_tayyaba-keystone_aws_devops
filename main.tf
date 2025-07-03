@@ -56,6 +56,8 @@ resource "aws_iam_instance_profile" "instance_profile" {
   role = aws_iam_role.log_writer.name
 }
 
+# add a specific policy for s3 dev and s3 prod
+
 # Create stage-specific S3 bucket
 resource "aws_s3_bucket" "logs_bucket" {
   bucket        = "${var.bucket_name}-${var.stage}"
@@ -172,7 +174,7 @@ resource "aws_cloudwatch_log_metric_filter" "error_filter" {
   depends_on = [aws_cloudwatch_log_group.app_logs]
 }
 
-# CloudWatch Alarm
+# CloudWatch Alarm.
 resource "aws_cloudwatch_metric_alarm" "error_alarm" {
   alarm_name          = "app-error-alarm-${var.stage}"
   comparison_operator = "GreaterThanOrEqualToThreshold"

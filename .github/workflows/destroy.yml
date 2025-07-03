@@ -35,3 +35,4 @@ jobs:
           -var="stage=${{ github.event.inputs.stage }}" \
           -var="bucket_name=tayyaba-devops-app-logs-techeazy" \
           -var="github_token=${{ secrets.GH_PAT }}"
+ 
