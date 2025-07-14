@@ -3,8 +3,8 @@ name: Deploy Dev/Prod Infra
 on:
   push:
     tags:
-      - 'deploy-dev'
-      - 'deploy-prod'
+      - 'deploy-dev*'
+      - 'deploy-prod*'
 
 jobs:
   terraform:
@@ -24,10 +24,7 @@ jobs:
     - name: Set up Terraform
       uses: hashicorp/setup-terraform@v2
 
-    - name: Terraform Init
-      run: terraform init
-
-    - name: Determine Stage
+    - name: Determine Stage from Tag
       id: stage
       run: |
         TAG_NAME=${GITHUB_REF#refs/tags/}
@@ -36,15 +33,18 @@ jobs:
         else
           echo "stage=dev" >> "$GITHUB_OUTPUT"
         fi
-        
-     # ✅ Backend switch logic — this is where you add it
-    - name: Select backend based on stage
+
+    - name: Select backend file
       run: |
+        rm -f backend.tf
         if [[ "${{ steps.stage.outputs.stage }}" == "prod" ]]; then
           cp backend-prod.tf backend.tf
         else
           cp backend-dev.tf backend.tf
         fi
+
+    - name: Terraform Init
+      run: terraform init
 
     - name: Terraform Apply (${{ steps.stage.outputs.stage }})
       id: apply_step
