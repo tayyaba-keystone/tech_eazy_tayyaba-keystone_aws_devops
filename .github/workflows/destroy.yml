@@ -1,19 +1,19 @@
-name: Deploy Dev Infra
+name: Destroy Dev Infra
 
 on:
   push:
     tags:
-      - 'deploy-dev'
+      - 'destroy-dev'  # Trigger when this tag is pushed
 
 jobs:
-  terraform:
+  destroy:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout Repo
       uses: actions/checkout@v3
 
-    - name: Configure AWS credentials
+    - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v2
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -26,18 +26,18 @@ jobs:
     - name: Terraform Init
       run: terraform init
 
-    - name: Terraform Apply (dev)
-      id: apply_step
+    - name: Terraform Destroy (dev)
+      id: destroy_step
       run: |
-        terraform apply -auto-approve \
+        terraform destroy -auto-approve \
           -var="stage=dev" \
           -var="bucket_name=tayyaba-devops-app-logs-techeazy" \
           -var="github_token=${{ secrets.GH_PAT }}" \
-        | tee tf-output.log
+        | tee tf-destroy-output.log
 
-    - name: Upload Log to S3 if Apply Fails
+    - name: Upload Destroy Log to S3 if Destroy Fails
       if: failure()
       run: |
         TIMESTAMP=$(date +%Y-%m-%d-%H-%M-%S)
-        FILE="tf-failed-dev-${TIMESTAMP}.log"
-        aws s3 cp tf-output.log s3://tayyaba-devops-app-logs-techeazy/logs/$FILE
+        FILE="tf-destroy-failed-dev-${TIMESTAMP}.log"
+        aws s3 cp tf-destroy-output.log s3://tayyaba-devops-app-logs-techeazy/logs/$FILE
