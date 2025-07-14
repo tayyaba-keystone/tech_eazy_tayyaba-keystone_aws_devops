@@ -36,11 +36,30 @@ jobs:
         else
           echo "stage=dev" >> "$GITHUB_OUTPUT"
         fi
+        
+     # ✅ Backend switch logic — this is where you add it
+    - name: Select backend based on stage
+      run: |
+        if [[ "${{ steps.stage.outputs.stage }}" == "prod" ]]; then
+          cp backend-prod.tf backend.tf
+        else
+          cp backend-dev.tf backend.tf
+        fi
 
     - name: Terraform Apply (${{ steps.stage.outputs.stage }})
+      id: apply_step
       run: |
         echo "Deploying to stage: ${{ steps.stage.outputs.stage }}"
         terraform apply -auto-approve \
           -var="stage=${{ steps.stage.outputs.stage }}" \
           -var="bucket_name=tayyaba-devops-app-logs-techeazy" \
-          -var="github_token=${{ secrets.GH_PAT }}"
+          -var="github_token=${{ secrets.GH_PAT }}" \
+        | tee tf-output.log
+
+    - name: Upload Log to S3 if Apply Fails
+      if: failure()
+      run: |
+        TIMESTAMP=$(date +%Y-%m-%d-%H-%M-%S)
+        STAGE=${{ steps.stage.outputs.stage }}
+        FILE="tf-failed-${STAGE}-${TIMESTAMP}.log"
+        aws s3 cp tf-output.log s3://tayyaba-devops-app-logs-techeazy/logs/$FILE
