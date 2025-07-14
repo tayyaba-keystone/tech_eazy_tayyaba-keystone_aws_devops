@@ -3,8 +3,8 @@ name: Deploy Dev/Prod Infra
 on:
   push:
     tags:
-      - 'deploy-dev'
-      - 'deploy-prod'
+      - 'deploy-dev*'
+      - 'deploy-prod*'
 
 jobs:
   terraform:
@@ -24,10 +24,7 @@ jobs:
     - name: Set up Terraform
       uses: hashicorp/setup-terraform@v2
 
-    - name: Terraform Init
-      run: terraform init
-
-    - name: Determine Stage
+    - name: Determine Stage from Tag
       id: stage
       run: |
         TAG_NAME=${GITHUB_REF#refs/tags/}
@@ -36,11 +33,23 @@ jobs:
         else
           echo "stage=dev" >> "$GITHUB_OUTPUT"
         fi
+    - name: Terraform Init
+      run: terraform init
 
     - name: Terraform Apply (${{ steps.stage.outputs.stage }})
+      id: apply_step
       run: |
         echo "Deploying to stage: ${{ steps.stage.outputs.stage }}"
         terraform apply -auto-approve \
           -var="stage=${{ steps.stage.outputs.stage }}" \
           -var="bucket_name=tayyaba-devops-app-logs-techeazy" \
-          -var="github_token=${{ secrets.GH_PAT }}"
+          -var="github_token=${{ secrets.GH_PAT }}" \
+        | tee tf-output.log
+
+    - name: Upload Log to S3 if Apply Fails
+      if: failure()
+      run: |
+        TIMESTAMP=$(date +%Y-%m-%d-%H-%M-%S)
+        STAGE=${{ steps.stage.outputs.stage }}
+        FILE="tf-failed-${STAGE}-${TIMESTAMP}.log"
+        aws s3 cp tf-output.log s3://tayyaba-devops-app-logs-techeazy/logs/$FILE

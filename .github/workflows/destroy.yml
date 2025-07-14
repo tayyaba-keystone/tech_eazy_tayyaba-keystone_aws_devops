@@ -1,12 +1,9 @@
-name: Destroy Dev/Prod Infra
+name: Destroy Dev Infra
 
 on:
-  workflow_dispatch:
-    inputs:
-      stage:
-        description: 'Stage to destroy (dev or prod)'
-        required: true
-        default: 'dev'
+  push:
+    tags:
+      - 'destroy-dev'  # Trigger when this tag is pushed
 
 jobs:
   destroy:
@@ -29,9 +26,18 @@ jobs:
     - name: Terraform Init
       run: terraform init
 
-    - name: Terraform Destroy
+    - name: Terraform Destroy (dev)
+      id: destroy_step
       run: |
         terraform destroy -auto-approve \
-          -var="stage=${{ github.event.inputs.stage }}" \
+          -var="stage=dev" \
           -var="bucket_name=tayyaba-devops-app-logs-techeazy" \
-          -var="github_token=${{ secrets.GH_PAT }}"
+          -var="github_token=${{ secrets.GH_PAT }}" \
+        | tee tf-destroy-output.log
+
+    - name: Upload Destroy Log to S3 if Destroy Fails
+      if: failure()
+      run: |
+        TIMESTAMP=$(date +%Y-%m-%d-%H-%M-%S)
+        FILE="tf-destroy-failed-dev-${TIMESTAMP}.log"
+        aws s3 cp tf-destroy-output.log s3://tayyaba-devops-app-logs-techeazy/logs/$FILE

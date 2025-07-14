@@ -1,3 +1,5 @@
+# declare all the variables
+
 variable "stage" {}
 variable "ami" {
   default = "ami-020cba7c55df1f615"
@@ -14,4 +16,9 @@ variable "github_token" {
   description = "GitHub token for private repo access"
   type        = string
   sensitive   = true
+}
+
+variable "alert_email" {
+  description = "Email for SNS alerts"
+  type        = string
 }
