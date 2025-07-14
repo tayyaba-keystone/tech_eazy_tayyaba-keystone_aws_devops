@@ -33,16 +33,6 @@ jobs:
         else
           echo "stage=dev" >> "$GITHUB_OUTPUT"
         fi
-
-    - name: Select backend file
-      run: |
-        rm -f backend.tf
-        if [[ "${{ steps.stage.outputs.stage }}" == "prod" ]]; then
-          cp backend-prod.tf backend.tf
-        else
-          cp backend-dev.tf backend.tf
-        fi
-
     - name: Terraform Init
       run: terraform init
 

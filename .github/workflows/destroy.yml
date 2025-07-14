@@ -1,13 +1,12 @@
-name: Destroy AWS Infra
+name: Deploy Dev Infra
 
 on:
   push:
     tags:
-      - 'destroy-dev'
-      - 'destroy-prod'
+      - 'deploy-dev'
 
 jobs:
-  destroy:
+  terraform:
     runs-on: ubuntu-latest
 
     steps:
@@ -27,39 +26,18 @@ jobs:
     - name: Terraform Init
       run: terraform init
 
-    - name: Determine Stage
-      id: stage
+    - name: Terraform Apply (dev)
+      id: apply_step
       run: |
-        TAG_NAME=${GITHUB_REF#refs/tags/}
-        if [[ "$TAG_NAME" == "destroy-prod" ]]; then
-          echo "stage=prod" >> "$GITHUB_OUTPUT"
-        else
-          echo "stage=dev" >> "$GITHUB_OUTPUT"
-        fi
-
-     # ✅ Backend switch logic — this is where you add it
-    - name: Select backend based on stage
-      run: |
-        if [[ "${{ steps.stage.outputs.stage }}" == "prod" ]]; then
-          cp backend-prod.tf backend.tf
-        else
-          cp backend-dev.tf backend.tf
-        fi
-
-    - name: Terraform Destroy (${{ steps.stage.outputs.stage }})
-      id: destroy_step
-      run: |
-        echo "Destroying stage: ${{ steps.stage.outputs.stage }}"
-        terraform destroy -auto-approve \
-          -var="stage=${{ steps.stage.outputs.stage }}" \
+        terraform apply -auto-approve \
+          -var="stage=dev" \
           -var="bucket_name=tayyaba-devops-app-logs-techeazy" \
           -var="github_token=${{ secrets.GH_PAT }}" \
-        | tee destroy-output.log
+        | tee tf-output.log
 
-    - name: Upload Destroy Log to S3 if Failed
+    - name: Upload Log to S3 if Apply Fails
       if: failure()
       run: |
         TIMESTAMP=$(date +%Y-%m-%d-%H-%M-%S)
-        STAGE=${{ steps.stage.outputs.stage }}
-        FILE="tf-destroy-failed-${STAGE}-${TIMESTAMP}.log"
-        aws s3 cp destroy-output.log s3://tayyaba-devops-app-logs-techeazy/logs/$FILE
+        FILE="tf-failed-dev-${TIMESTAMP}.log"
+        aws s3 cp tf-output.log s3://tayyaba-devops-app-logs-techeazy/logs/$FILE
